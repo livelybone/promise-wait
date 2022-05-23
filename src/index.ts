@@ -48,7 +48,7 @@ export function waitUntil<T extends any>(
       : reject(new Error('waitUntil: timeout'))
   }, timeout)
 
-  const interval = options?.interval ?? 10000
+  const interval = options?.interval ?? 50
   const startTime = Date.now()
   let count = 0
   const runInterval = () => {
