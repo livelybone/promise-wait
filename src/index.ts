@@ -1,5 +1,17 @@
+export function ejectPromise<T extends any = void>() {
+  // eslint-disable-next-line no-unused-vars,@typescript-eslint/no-unused-vars
+  const callbacks = { resolve: (_: T) => {}, reject: (_: any) => {} }
+  const pro = new Promise<T>((res, rej) => {
+    callbacks.resolve = res
+    callbacks.reject = rej
+  })
+  return Object.assign(pro, callbacks)
+}
+
 export function wait(timeout: number) {
-  return new Promise(res => setTimeout(res, timeout))
+  const promise = ejectPromise()
+  const timer = setTimeout(promise.resolve, timeout)
+  return Object.assign(promise, { stop: () => clearTimeout(timer) })
 }
 
 export interface WaitUntilOptions {
@@ -32,20 +44,15 @@ export function waitUntil<T extends any>(
   until: (params: WaitUntilCallbackParams) => T | Promise<T>,
   options?: WaitUntilOptions,
 ) {
-  let resolve: (val: any) => void
-  let reject: (reason?: any) => void
-  const pro = new Promise<{ timeout: true } | T>((res, rej) => {
-    resolve = res
-    reject = rej
-  })
+  const pro = ejectPromise<{ timeout: true } | T>()
 
   const timeout = options?.timeout ?? 10000
   let intervalTimer: any
   const timer = setTimeout(() => {
     clearTimeout(intervalTimer)
     return options?.resolveTimeout
-      ? resolve({ timeout: true })
-      : reject(new Error('waitUntil: timeout'))
+      ? pro.resolve({ timeout: true })
+      : pro.reject(new Error('waitUntil: timeout'))
   }, timeout)
 
   const interval = options?.interval ?? 50
@@ -57,7 +64,7 @@ export function waitUntil<T extends any>(
     count += 1
     Promise.resolve(val).then($val => {
       if ($val) {
-        resolve($val)
+        pro.resolve($val)
         clearTimeout(timer)
       } else if (passedTime < timeout) {
         intervalTimer = setTimeout(runInterval, interval)
@@ -67,5 +74,5 @@ export function waitUntil<T extends any>(
 
   runInterval()
 
-  return pro
+  return Object.assign(pro, { cancel: () => clearTimeout(intervalTimer) })
 }

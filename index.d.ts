@@ -1,4 +1,15 @@
-declare function wait(timeout: number): Promise<unknown>
+declare function ejectPromise<T extends any = void>(): Promise<T> & {
+  resolve: (_: T) => void
+  reject: (_: any) => void
+}
+declare function wait(
+  timeout: number,
+): Promise<void> & {
+  resolve: (_: void) => void
+  reject: (_: any) => void
+} & {
+  stop: () => void
+}
 interface WaitUntilOptions {
   /**
    * @default 10000
@@ -31,6 +42,23 @@ declare function waitUntil<T extends any>(
   | {
       timeout: true
     }
->
+> & {
+  resolve: (
+    _:
+      | T
+      | {
+          timeout: true
+        },
+  ) => void
+  reject: (_: any) => void
+} & {
+  cancel: () => void
+}
 
-export { WaitUntilCallbackParams, WaitUntilOptions, wait, waitUntil }
+export {
+  WaitUntilCallbackParams,
+  WaitUntilOptions,
+  ejectPromise,
+  wait,
+  waitUntil,
+}
