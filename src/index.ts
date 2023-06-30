@@ -62,14 +62,16 @@ export function waitUntil<T extends any>(
     const passedTime = Date.now() - startTime
     const val = until({ count, passedTime })
     count += 1
-    Promise.resolve(val).then($val => {
-      if ($val) {
-        pro.resolve($val)
-        clearTimeout(timer)
-      } else if (passedTime < timeout) {
-        intervalTimer = setTimeout(runInterval, interval)
-      }
-    })
+    Promise.resolve(val)
+      .then($val => {
+        if ($val) {
+          pro.resolve($val)
+          clearTimeout(timer)
+        } else if (passedTime < timeout) {
+          intervalTimer = setTimeout(runInterval, interval)
+        }
+      })
+      .catch(console.error)
   }
 
   runInterval()
