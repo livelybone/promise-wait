@@ -47,12 +47,14 @@ export function waitUntil<T extends any>(
   const pro = ejectPromise<{ timeout: true } | T>()
 
   const timeout = options?.timeout ?? 10000
+  const timeoutErr = new Error('waitUntil: timeout')
+
   let intervalTimer: any
   const timer = setTimeout(() => {
     clearTimeout(intervalTimer)
     return options?.resolveTimeout
       ? pro.resolve({ timeout: true })
-      : pro.reject(new Error('waitUntil: timeout'))
+      : pro.reject(timeoutErr)
   }, timeout)
 
   const interval = options?.interval ?? 50
