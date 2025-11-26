@@ -10,30 +10,70 @@ declare function wait(
 } & {
   stop: () => void
 }
+/**
+ * Options for `waitUntil` polling behavior.
+ *
+ * - `timeout` controls the overall maximum wait time.
+ * - `resolveTimeout` changes timeout behavior from reject to a resolved marker.
+ * - `interval` controls how frequently the `until` callback is evaluated.
+ */
 interface WaitUntilOptions {
   /**
+   * Overall timeout in milliseconds before giving up.
    * @default 10000
-   * */
+   */
   timeout?: number
   /**
-   * @desc whether resolve the promise that returned or not when timeout
-   * */
+   * Whether to resolve instead of reject on timeout. If `true`, the promise resolves with `{ timeout: true }` when the
+   * overall `timeout` is reached. If `false` or omitted, the promise rejects with `Error('waitUntil: timeout')`.
+   */
   resolveTimeout?: boolean
   /**
+   * Polling interval in milliseconds between executions of the `until` callback.
    * @default 50
-   * */
+   */
   interval?: number
 }
+/**
+ * Parameters passed to the `until` callback in `waitUntil`.
+ */
 interface WaitUntilCallbackParams {
   /**
-   * @desc How many times has this until callback been executed, start with 0
-   * */
+   * How many times the `until` callback has been executed (starts at 0).
+   */
   count: number
   /**
-   * @desc The passed time since waitUntil been called
-   * */
+   * Milliseconds elapsed since `waitUntil` was called.
+   */
   passedTime: number
 }
+/**
+ * @param until
+ * @param options
+ * @returns
+ */
+/**
+ * Repeatedly evaluates the `until` callback until it returns a truthy value, then resolves with that value.
+ *
+ * Field logic and behavior:
+ * - The `until` callback may be synchronous or return a Promise. Its return is evaluated by JS truthiness:
+ *   - If the resolved/returned value is truthy, the promise resolves immediately with that value.
+ *   - If falsy (`false`, `0`, `''`, `null`, `undefined`, `NaN`), polling continues until the condition is met or timed out.
+ * - `options.timeout` (ms, default 10000): the maximum total wait time.
+ * - `options.interval` (ms, default 50): delay between `until` evaluations.
+ * - `options.resolveTimeout` (default false):
+ *   - `true`  → resolve with `{ timeout: true }` when hitting timeout.
+ *   - `false` → reject with `Error('waitUntil: timeout')` when hitting timeout.
+ * - Cancellation: the returned promise has `cancel()` to stop further interval polling; the overall timeout timer is not
+ *   cleared by `cancel()`, so final resolution/rejection still follows the timeout behavior above.
+ * - Errors: if `until` throws synchronously or returns a rejected Promise, the error is logged and the returned promise
+ *   rejects immediately; no further polling occurs. This rejection is independent of `timeout`/`resolveTimeout`.
+ *
+ * @param until Function invoked every interval with `{ count, passedTime }`.
+ * @param options Polling configuration; see details above.
+ * @returns A promise resolving to `T` (truthy value from `until`) or `{ timeout: true }` (when `resolveTimeout` is true),
+ *          plus a `cancel()` method to stop interval polling.
+ */
 declare function waitUntil<T extends any>(
   until: (params: WaitUntilCallbackParams) => T | Promise<T>,
   options?: WaitUntilOptions,
