@@ -114,7 +114,7 @@ export function waitUntil<T extends any>(
         }
       })
       .catch(err => {
-        console.error(err)
+        clearTimeout(intervalTimer)
         pro.reject(err)
       })
   }
